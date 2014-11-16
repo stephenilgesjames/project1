@@ -1,0 +1,84 @@
+---
+title: "Project 1"
+author: "Stephen James"
+date: "Wednesday, November 12, 2014"
+output: html_document
+---
+ 
+ Read the data in 
+ 
+ 
+```{r}
+setwd("D:/JHcourses/reproduceable analysis/project1")
+
+activity <- read.csv(file="activity.csv")
+numstep<- aggregate(steps ~ date, data=activity, FUN=sum)
+```
+
+**The histogram**
+
+```{r, echo=TRUE}
+library(ggplot2)
+qplot(steps, data=numstep,geom="histogram", binwidth=1000) + labs(title="Number of Steps per Day")
+```
+
+
+ 
+**The summary of the daily steps**
+```{r, echo=TRUE}
+
+summary(numstep$steps)
+```
+**The summary of the 5 minute interval steps**
+```{r, echo=TRUE}
+
+summary(activity$steps)
+```
+-
+**What is the average daily activity pattern?**
+
+
+```{r,echo=TRUE}
+dsteps <- aggregate(steps ~ interval,data = activity, FUN=mean)
+plot(dsteps$interval,dsteps$steps, type="l",xlab="Time day Interval",ylab="Mean Number of Steps",main="Average Daily Pattern")
+ subset(dsteps,steps==max(dsteps$step))
+
+```
+**Showing the number of NA's 5 minute interval steps**
+```{r, echo=TRUE}
+
+sum(is.na(activity$steps))
+```
+
+**Removing all the NA's**
+
+
+  I will use the median as it is the central  tendency
+```{r, echo=TRUE}
+library(plyr)
+
+allact <- activity
+allact[is.na(allact)]<- median(activity$steps,na.rm=TRUE)
+summary(allact$steps)
+
+
+summary(allact)
+```
+**How has the distribution changed**
+```{r, echo=TRUE}
+numstepall<- aggregate(steps ~ date, data=allact, FUN=sum)
+
+qplot(steps, data=numstepall,geom="histogram", binwidth=1000) + labs(title="Number of Steps per Day with the NA's Removed as the median")
+qplot(steps, data=numstep,geom="histogram", binwidth=1000) + labs(title="Number of Steps per Day with the NA's")
+
+allact<-mutate(allact, dayofweek =weekdays(as.Date(allact$date)))
+weekend <- subset(allact,dayofweek == c("Saturday", "Sunday"))
+weekday <- subset(allact,dayofweek == c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+weekday<- mutate(weekday,typeofday="Weekday")
+weekend <- mutate(weekend, typeofday="Weekend")
+alldays<- rbind(weekday, weekend)
+dstepsall <- aggregate(steps~ interval + typeofday,data = alldays,  FUN=mean)
+ggplot(data=dstepsall, aes(x=interval, y=steps))+ geom_line() +facet_grid(.~typeofday)+ggtitle("Mean Steps by time interval by Weekday and Weekend")
+
+
+```
